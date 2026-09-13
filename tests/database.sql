@@ -49,6 +49,19 @@ begin
  if not exists(select 1 from public.arkham_investigators where id=t.inv and not active and earned=3) then raise exception 'FAIL: archived investigator lost';end if;
  perform public.arkham_action('transfer_owner',t.cid,jsonb_build_object('user_id',t.b));
  failed:=false;begin perform public.arkham_action('create_invite',t.cid,'{}');exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: previous owner retains invitation rights';end if;
+ failed:=false;begin perform public.arkham_delete_campaign(t.cid,'Automated integration check');exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: previous owner can delete campaign';end if;
+ perform set_config('request.jwt.claim.sub',t.b::text,true);
+ failed:=false;begin perform public.arkham_delete_campaign(t.cid,'wrong name');exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: campaign deletion accepted wrong confirmation';end if;
+ perform public.arkham_delete_campaign(t.cid,'Automated integration check');
+ if exists(select 1 from public.arkham_campaigns where id=t.cid)
+  or exists(select 1 from public.arkham_members where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_investigators where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_sessions where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_results where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_journal where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_events where campaign_id=t.cid)
+  or exists(select 1 from public.arkham_invites where campaign_id=t.cid)
+ then raise exception 'FAIL: campaign deletion left dependent data';end if;
 end $$;
-select 'PASS: RLS isolation, invite-only join, own-only writes, character uniqueness, transactional XP delta, stale-write protection, GM transfer, session completeness, closed-session protection, archival, owner transfer' as result;
+select 'PASS: RLS isolation, invite-only join, own-only writes, character uniqueness, transactional XP delta, stale-write protection, GM transfer, session completeness, closed-session protection, archival, owner transfer, checked campaign deletion' as result;
 rollback;

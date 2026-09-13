@@ -4,7 +4,7 @@ Magyar, mobilbarát webapp Supabase Auth és PostgreSQL háttérrel. Supabase-pr
 
 ## Funkciók
 
-E-mail/jelszó belépés, regisztráció és jelszó-visszaállítás; kampányok; hét napos, visszavonható meghívólinkek; legfeljebb négy csapattag; nyomozóválasztás; saját adatlap, XP, traumák, állapotok, jegyzetek és paklilink; alkalmanként átadható játékmesteri szerep; közös napló és eredmény; változástörténet; kampánygazda átadása; kampány lezárása.
+E-mail/jelszó belépés, regisztráció és jelszó-visszaállítás; kampányok; hét napos, visszavonható meghívólinkek; legfeljebb négy csapattag; az öt alapnyomozó kiválasztása; saját adatlap, XP, traumák, állapotok, jegyzetek és paklilink; alkalmanként átadható játékmesteri szerep; közös napló és eredmény; változástörténet; kampánygazda átadása; kampány lezárása és névvel megerősített végleges törlés.
 
 A személyes eredmények az alkalom lezárásáig javíthatók. Csak a különbözet módosítja az XP-t és a traumát, egyetlen adatbázis-tranzakcióban. Régi verzióval nem írható felül új mentés. Lezáráskor minden résztvevőnek mentenie kell. Nyomozócsere két alkalom között lehetséges, a korábbi adatlap megmarad. A játékmester saját nyomozó nélkül is vezethet alkalmat. Az alkalom résztvevőlistája indításkor rögzül.
 
@@ -36,13 +36,13 @@ Az adatbázis az egyetlen hiteles adattároló. A böngésző a Supabase-belép�
 
 Minden tábla RLS-védett. Közvetlen kliensoldali adatbázisírás tiltott. Az arkham_action függvény ellenőrzi a belépést, kampánytagságot, az aktuális szerepet és a rekordverziót. Kampánysor-zárolás sorba rendezi a párhuzamos módosításokat. A naplót csak a szerver írhatja.
 
-A Supabase ellenőrzője két szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+A Supabase ellenőrzője három szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. A kampánytörlési függvény ezen felül kampánygazdai jogosultságot és pontos névmegerősítést is követel. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
 
 ## Ellenőrzés
 
     npm test
 
-A tests/database.sql integrációs teszt a tényleges Supabase-sémán futott három ideiglenes tesztfelhasználóval, visszagörgetett tranzakcióban. Sikeresen ellenőrizte az idegen kampány elrejtését, a meghívós tagságot, saját nyomozó szerkesztését, a közvetlen írások tiltását, duplikált karakter és eredmény tiltását, XP-javítást, játékmester- és kampánygazdaváltást, lezárási feltételeket és archiválást. Tesztadat nem maradt. Kliensellenőrzések: számmezők, HTML-escape, biztonságos paklilinkek. A telepített futásidejű függőségek npm audit ellenőrzése nem talált ismert hibát.
+A tests/database.sql integrációs teszt a tényleges Supabase-sémán futott három ideiglenes tesztfelhasználóval, visszagörgetett tranzakcióban. Sikeresen ellenőrizte az idegen kampány elrejtését, a meghívós tagságot, saját nyomozó szerkesztését, a közvetlen írások tiltását, duplikált karakter és eredmény tiltását, XP-javítást, játékmester- és kampánygazdaváltást, lezárási feltételeket, archiválást, valamint a kizárólag kampánygazda által, pontos névvel megerősíthető teljes törlést. Tesztadat nem maradt. Kliensellenőrzések: számmezők, HTML-escape, biztonságos paklilinkek. A telepített futásidejű függőségek npm audit ellenőrzése nem talált ismert hibát.
 
 ## Jelenlegi keret
 
