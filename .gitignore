@@ -1,3 +1,10 @@
 .sites-runtime/
 node_modules/
 *.zip
+
+.sites-runtime/
+.env
+.env.*
+!.env.example
+src/prototype-reference.txt
+*.tar.gz
