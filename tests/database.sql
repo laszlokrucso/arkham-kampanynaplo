@@ -11,6 +11,7 @@ do $$
 declare t record; d jsonb; token uuid; failed boolean; rev integer;
 begin
  select * into t from arkham_test_context;
+ if (select count(*) from public.arkham_characters) < 64 then raise exception 'FAIL: Hall of Arkham investigator roster incomplete';end if;
  perform set_config('request.jwt.claim.sub',t.a::text,true);
  d:=public.arkham_action('create_campaign',null,'{"name":"Automated integration check","player_name":"Test owner"}');
  update arkham_test_context set cid=(d->>'campaign_id')::uuid;select * into t from arkham_test_context;

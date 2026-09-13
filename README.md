@@ -4,7 +4,7 @@ Magyar, mobilbarát webapp Supabase Auth és PostgreSQL háttérrel. Supabase-pr
 
 ## Funkciók
 
-E-mail/jelszó belépés, regisztráció és jelszó-visszaállítás; kampányok; hét napos, visszavonható meghívólinkek; legfeljebb négy csapattag; az öt alapnyomozó kiválasztása; saját adatlap, XP, traumák, állapotok, jegyzetek és paklilink; alkalmanként átadható játékmesteri szerep; közös napló és eredmény; változástörténet; kampánygazda átadása; kampány lezárása és névvel megerősített végleges törlés.
+E-mail/jelszó belépés, regisztráció és jelszó-visszaállítás; kampányok; hét napos, visszavonható meghívólinkek; legfeljebb négy csapattag; 64 normál kampánynyomozó kiválasztása a Hall of Arkham listája alapján; saját adatlap, XP, traumák, állapotok, jegyzetek és paklilink; alkalmanként átadható játékmesteri szerep; közös napló és eredmény; változástörténet; kampánygazda átadása; kampány lezárása és névvel megerősített végleges törlés.
 
 A személyes eredmények az alkalom lezárásáig javíthatók. Csak a különbözet módosítja az XP-t és a traumát, egyetlen adatbázis-tranzakcióban. Régi verzióval nem írható felül új mentés. Lezáráskor minden résztvevőnek mentenie kell. Nyomozócsere két alkalom között lehetséges, a korábbi adatlap megmarad. A játékmester saját nyomozó nélkül is vezethet alkalmat. Az alkalom résztvevőlistája indításkor rögzül.
 
@@ -46,4 +46,4 @@ A tests/database.sql integrációs teszt a tényleges Supabase-sémán futott h�
 
 ## Jelenlegi keret
 
-Öt alapnyomozó az adatbázisból betöltve; teljes katalógus és kártyaképek később bővíthetők. Magyar felület; az opcionális angol változat még nincs elkészítve. Csak alkalmak közötti állapotot tárol, félbehagyott játékot nem.
+Hatvannégy normál kampányban használható nyomozó az adatbázisból betöltve, a Core Settől a The Drowned Cityig és az Investigator Starter Deckekkel. A Parallel Investigator változatokat és a Barkham Horror karaktereit a lista nem kezeli külön személyekként. Kártyaképek később bővíthetők. Magyar felület; az opcionális angol változat még nincs elkészítve. Csak alkalmak közötti állapotot tárol, félbehagyott játékot nem.
