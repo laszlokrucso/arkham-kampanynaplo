@@ -19,11 +19,16 @@ Node.js 22 vagy újabb. Parancsok a projekt könyvtárában:
 Helyi cím: http://127.0.0.1:4173/
 A Supabase SDK helyben csomagolva kerül a frontendbe. A publikus Supabase-kulcs szándékosan nyilvános. Service-role kulcs nem szükséges, és nem kerülhet a frontendbe.
 
+## Éles változat
+
+GitHub Pages: https://laszlokrucso.github.io/arkham-kampanynaplo/
+
+A `main` ágra küldött minden változtatást a `.github/workflows/pages.yml` munkafolyamat tesztel, összeállít és automatikusan publikál.
+
 ## A csoportos induláshoz még szükséges
 
-1. Supabase / Authentication / URL Configuration: a Redirect URLs listába kerüljön a http://127.0.0.1:4173/ cím. Publikálás után az éles URL legyen a Site URL és engedélyezett visszatérési cím. A jelszó-visszaállítás az app PASSWORD_RECOVERY nézetét nyitja meg.
+1. Supabase / Authentication / URL Configuration: a Site URL legyen `https://laszlokrucso.github.io/arkham-kampanynaplo/`, a Redirect URLs listába pedig kerüljön ugyanez és a `http://127.0.0.1:4173/` helyi cím. A jelszó-visszaállítás az app PASSWORD_RECOVERY nézetét nyitja meg.
 2. Supabase / Authentication / Email vagy SMTP Settings: saját SMTP és ellenőrzött feladó szükséges a csoport regisztrációs leveleihez. Az alap levélküldő korlátozott. Az e-mail megerősítés aktív maradt. A levelek kézbesítését még nem ellenőriztük.
-3. A webfelület még nincs publikálva. A korábbi külső feltöltést az automatikus jóváhagyási ellenőrzés blokkolta; a külön felhasználói engedély még szükséges. A Sites jelenlegi hozzáférése csak a tulajdonosé. A csoportos eléréshez a webfelület hozzáférését is rendezni kell, a kampányadatokat ettől függetlenül Supabase-tagsági szabályok védik.
 
 ## Adattárolás és jogosultságok
 
