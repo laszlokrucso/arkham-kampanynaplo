@@ -25,10 +25,10 @@ GitHub Pages: https://laszlokrucso.github.io/arkham-kampanynaplo/
 
 A `main` ágra küldött minden változtatást a `.github/workflows/pages.yml` munkafolyamat tesztel, összeállít és automatikusan publikál.
 
-## A csoportos induláshoz még szükséges
+## Supabase üzemeltetés
 
-1. Supabase / Authentication / URL Configuration: a Site URL legyen `https://laszlokrucso.github.io/arkham-kampanynaplo/`, a Redirect URLs listába pedig kerüljön ugyanez és a `http://127.0.0.1:4173/` helyi cím. A jelszó-visszaállítás az app PASSWORD_RECOVERY nézetét nyitja meg.
-2. Supabase / Authentication / Email vagy SMTP Settings: saját SMTP és ellenőrzött feladó szükséges a csoport regisztrációs leveleihez. Az alap levélküldő korlátozott. Az e-mail megerősítés aktív maradt. A levelek kézbesítését még nem ellenőriztük.
+1. Supabase / Authentication / URL Configuration: a Site URL és az engedélyezett Redirect URL beállítva erre: `https://laszlokrucso.github.io/arkham-kampanynaplo/`. A jelszó-visszaállítás az app PASSWORD_RECOVERY nézetét nyitja meg.
+2. Supabase / Authentication / Email vagy SMTP Settings: egyelőre a Supabase alap levélküldése maradt használatban. Ez korlátozott lehet; saját SMTP és ellenőrzött feladó később beállítható. Az e-mail megerősítés aktív maradt.
 
 ## Adattárolás és jogosultságok
 
