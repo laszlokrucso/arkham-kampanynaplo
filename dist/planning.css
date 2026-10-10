@@ -1,0 +1,14 @@
+.campaign-stats{margin:28px 0 32px}
+.campaign-stats .stats{margin:14px 0 10px}
+.campaign-stats .stat strong{display:block;font-size:25px;overflow-wrap:anywhere}
+.campaign-stats .stat span{display:block;margin-top:8px}
+.stats-explanation{font-size:13px;margin:0}
+.planning-columns{margin-bottom:32px;align-items:start}
+.planning-columns .section-title{flex-wrap:wrap}
+.reminder-text{white-space:pre-wrap}
+.prep-check{display:flex;align-items:center;gap:12px;margin:0;padding:12px 0;border-bottom:1px solid var(--line);color:var(--white);cursor:pointer}
+.prep-check input{width:20px;height:20px;flex:0 0 20px;padding:0;accent-color:var(--gold)}
+.prep-check:has(input:disabled){cursor:default;color:var(--muted)}
+.prep-check:has(input:checked) span{text-decoration:line-through}
+.prep-heading{margin-top:26px}
+@media(max-width:700px){.campaign-stats .stats{grid-template-columns:1fr}.campaign-stats .stat+.stat{border-left:0;border-top:1px solid var(--line)}}

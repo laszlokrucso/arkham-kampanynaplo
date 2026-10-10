@@ -12,4 +12,13 @@ export function formatDuration(minutes){
  const h=Math.floor(minutes/60),m=minutes%60;
  return [h?`${h} óra`:'',m?`${m} perc`:''].filter(Boolean).join(' ');
 }
+export function campaignStats(sessions,results){
+ const closed=sessions.filter(s=>s.closed),ids=new Set(closed.map(s=>s.id));
+ const timed=closed.filter(s=>Number.isInteger(s.duration_minutes)&&s.duration_minutes>0);
+ const totalMinutes=timed.reduce((sum,s)=>sum+s.duration_minutes,0);
+ return {completed:closed.length,timed:timed.length,missing:closed.length-timed.length,
+  totalMinutes:timed.length?totalMinutes:null,
+  averageMinutes:timed.length?Math.round(totalMinutes/timed.length):null,
+  totalXp:results.filter(r=>ids.has(r.session_id)&&r.submitted).reduce((sum,r)=>sum+r.xp,0)};
+}
 export function errorText(error){const m=error?.message||String(error);if(error?.code==='40001')return m;if(/Invalid login credentials/i.test(m))return 'Hibás e-mail-cím vagy jelszó.';if(/Email not confirmed/i.test(m))return 'Előbb erősítsd meg az e-mail-címedet a kapott levélben.';if(/rate limit|too many requests/i.test(m))return 'Túl sok próbálkozás. Várj egy kicsit, majd próbáld újra.';if(/email address not authorized|Email address.*invalid|Error sending/i.test(m))return 'A levélküldés nem sikerült. Ellenőrizd az e-mail-címedet; a levélküldő szolgáltatás beállítása is szükséges lehet.';if(/Failed to fetch|NetworkError|fetch failed/i.test(m))return 'Nem sikerült elérni a szervert. Ellenőrizd a kapcsolatot, majd próbáld újra; a mezők tartalma megmaradt.';if(/check constraint/i.test(m))return 'Az értékek nem érvényesek. A traumák nem lehetnek negatívak, és az elköltött XP nem haladhatja meg a megszerzett XP-t.';if(/duplicate key/i.test(m))return 'Ez az adat időközben már létrejött. Frissítsd az oldalt.';return m;}

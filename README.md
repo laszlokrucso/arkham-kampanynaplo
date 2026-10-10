@@ -10,6 +10,14 @@ A személyes eredmények az alkalom lezárásáig javíthatók. Csak a különb�
 
 Az alkalom lezárásakor a tényleges játékidő óra és perc formában megadható. Az üres mezők ismeretlen időt jelentenek; a régi alkalmak játékidejét nem számoljuk az adminisztrációs időbélyegekből. Az idő a kampányáttekintőn, az aktuális és a korábbi alkalmaknál látható. Az adott alkalom játékmestere vagy a kampánygazda lezárás után, lezárt kampányban is javíthatja. A javítás naplózott és verzióellenőrzött. A lezárás és az idő mentése egyetlen tranzakció. A `20261010142829_session_duration.sql` migráció alkalmazva.
 
+## Kampánystatisztika és felkészülés
+
+A kampányoldalon a lezárt alkalmak összes rögzített játékideje, átlagos hossza és a csapat összes megszerzett XP-je jelenik meg. A hiányzó játékidők kimaradnak az átlagból; a lefedettséget külön kiírjuk. Az XP-t az alkalmak mentett eredményeiből számoljuk, így az archivált nyomozók jutalma is megmarad.
+
+A közös folytatási emlékeztetőt a kampánygazda vagy a legutóbbi alkalom játékmestere mentheti, verzióellenőrzéssel. Az emlékeztető új alkalom indításakor is megmarad. A felkészülési lista célja a következő alkalom sorszáma: az indítás automatikusan új, üres listát jelent. A saját pakli- és XP-ellenőrzést mindenki maga pipálja, a közös forgatókönyv- és kellékellenőrzést a kampánygazda vagy játékmester. Az XP megtartható, a pipák nem blokkolják az alkalom indítását. A módosítások naplózottak; lezárt kampány tervezése csak olvasható. A lista kampánytörléskor automatikusan törlődik.
+
+A `20261010143949_campaign_planning.sql` migráció alkalmazva. A `tests/planning-database.sql` visszagörgetett tranzakcióban vizsgálja a hozzáférést, a szerepváltást, a verziókat, a lista újraindulását és a kampánytörlést.
+
 ## Indítás
 
 Node.js 22 vagy újabb. Parancsok a projekt könyvtárában:
@@ -38,7 +46,7 @@ Az adatbázis az egyetlen hiteles adattároló. A böngésző a Supabase-belép�
 
 Minden tábla RLS-védett. Közvetlen kliensoldali adatbázisírás tiltott. Az arkham_action függvény ellenőrzi a belépést, kampánytagságot, az aktuális szerepet és a rekordverziót. Kampánysor-zárolás sorba rendezi a párhuzamos módosításokat. A naplót csak a szerver írhatja.
 
-A Supabase ellenőrzője négy szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. A kampánytörlési függvény ezen felül kampánygazdai jogosultságot és pontos névmegerősítést is követel. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+A Supabase ellenőrzője öt szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. A kampánytörlési függvény ezen felül kampánygazdai jogosultságot és pontos névmegerősítést is követel. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
 
 ## Ellenőrzés
 

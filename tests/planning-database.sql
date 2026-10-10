@@ -1,0 +1,70 @@
+-- Real-schema checks; all test data is rolled back.
+begin;
+create temporary table plan_test(a uuid,b uuid,outsider uuid);
+insert into plan_test values(gen_random_uuid(),gen_random_uuid(),gen_random_uuid());
+insert into auth.users(id,aud,role,email)
+ select a,'authenticated','authenticated',a::text||'@example.invalid' from plan_test
+ union all select b,'authenticated','authenticated',b::text||'@example.invalid' from plan_test
+ union all select outsider,'authenticated','authenticated',outsider::text||'@example.invalid' from plan_test;
+grant select on plan_test to authenticated;
+set local role authenticated;
+do $$
+declare t record; cid uuid; sid uuid; token uuid; d jsonb; failed boolean; rev integer;
+begin
+ select * into t from plan_test;
+ perform set_config('request.jwt.claim.sub',t.a::text,true);
+ d:=public.arkham_action('create_campaign',null,'{"name":"Planning integration check","player_name":"Owner"}');
+ cid:=(d->>'campaign_id')::uuid;
+ d:=public.arkham_action('create_invite',cid,'{}');token:=(d->>'token')::uuid;
+ perform public.arkham_action('choose_character',cid,'{"character_code":"daisy"}');
+ perform public.arkham_plan(cid,'save_reminder',1,'{"body":"Remember the story"}');
+ failed:=false;begin perform public.arkham_plan(cid,'save_reminder',1,'{"body":"Stale"}');exception when serialization_failure then failed:=true;end;
+ if not failed then raise exception 'FAIL: stale reminder accepted';end if;
+ perform public.arkham_plan(cid,'set_preparation',0,'{"scope":"shared","task":"scenario","target_number":1,"done":true}');
+ perform set_config('request.jwt.claim.sub',t.outsider::text,true);
+ if exists(select 1 from public.arkham_preparation where campaign_id=cid) then raise exception 'FAIL: outsider reads prep';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'save_reminder',2,'{"body":"Forbidden"}');exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: outsider writes reminder';end if;
+ perform set_config('request.jwt.claim.sub',t.b::text,true);
+ perform public.arkham_action('join_campaign',null,jsonb_build_object('token',token,'player_name','Player'));
+ if not exists(select 1 from public.arkham_preparation where campaign_id=cid) then raise exception 'FAIL: member cannot read prep';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'save_reminder',2,'{"body":"Forbidden"}');exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: ordinary member writes reminder';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'set_preparation',1,'{"scope":"shared","task":"scenario","target_number":1,"done":false}');exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: ordinary member writes shared prep';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'set_preparation',0,jsonb_build_object('scope',t.a,'task','deck','target_number',1,'done',true));exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: other players prep writable';end if;
+ perform public.arkham_plan(cid,'set_preparation',0,'{"scope":"self","task":"deck","target_number":1,"done":true}');
+ failed:=false;begin perform public.arkham_plan(cid,'set_preparation',0,'{"scope":"self","task":"deck","target_number":1,"done":false}');exception when serialization_failure then failed:=true;end;
+ if not failed then raise exception 'FAIL: stale prep accepted';end if;
+ perform public.arkham_plan(cid,'set_preparation',1,'{"scope":"self","task":"deck","target_number":1,"done":false}');
+ failed:=false;begin update public.arkham_preparation set done=true where campaign_id=cid;exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: direct prep writes allowed';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'set_preparation',0,'{"scope":"self","task":"deck","target_number":1,"done":"true"}');exception when raise_exception then failed:=true;end;
+ if not failed then raise exception 'FAIL: malformed done accepted';end if;
+ perform set_config('request.jwt.claim.sub',t.a::text,true);
+ d:=public.arkham_action('start_session',cid,jsonb_build_object('title','Test','gm_id',t.b));sid:=(d->>'id')::uuid;
+ if not exists(select 1 from public.arkham_campaigns where id=cid and next_reminder='Remember the story') then raise exception 'FAIL: reminder lost on start';end if;
+ failed:=false;begin perform public.arkham_plan(cid,'set_preparation',1,'{"scope":"shared","task":"scenario","target_number":1,"done":false}');exception when serialization_failure then failed:=true;end;
+ if not failed then raise exception 'FAIL: old session checklist accepted';end if;
+ if exists(select 1 from public.arkham_preparation where campaign_id=cid and target_number=2) then raise exception 'FAIL: upcoming checklist not fresh';end if;
+ perform set_config('request.jwt.claim.sub',t.b::text,true);
+ perform public.arkham_plan(cid,'save_reminder',2,'{"body":"GM update"}');
+ perform public.arkham_plan(cid,'set_preparation',0,'{"scope":"shared","task":"tokens","target_number":2,"done":true}');
+ perform public.arkham_action('transfer_gm',cid,jsonb_build_object('session_id',sid,'revision',1,'gm_id',t.a));
+ failed:=false;begin perform public.arkham_plan(cid,'save_reminder',3,'{"body":"Former GM"}');exception when insufficient_privilege then failed:=true;end;
+ if not failed then raise exception 'FAIL: former GM retains planning role';end if;
+ perform set_config('request.jwt.claim.sub',t.a::text,true);
+ perform public.arkham_plan(cid,'save_reminder',3,'{"body":""}');
+ if not exists(select 1 from public.arkham_events where campaign_id=cid and action='set_preparation') then raise exception 'FAIL: audit missing';end if;
+ perform public.arkham_action('save_common',cid,jsonb_build_object('session_id',sid,'revision',2,'resolution','R1'));
+ perform public.arkham_action('save_result',cid,jsonb_build_object('session_id',sid,'revision',1,'xp',1,'physical',0,'mental',0));
+ perform public.arkham_action('close_session',cid,jsonb_build_object('session_id',sid));
+ perform public.arkham_action('close_campaign',cid,'{}');
+ failed:=false;begin perform public.arkham_plan(cid,'save_reminder',4,'{"body":"Closed"}');exception when raise_exception then failed:=true;end;
+ if not failed then raise exception 'FAIL: closed campaign edited';end if;
+ perform public.arkham_delete_campaign(cid,'Planning integration check');
+ if exists(select 1 from public.arkham_preparation where campaign_id=cid) then raise exception 'FAIL: campaign delete leaves prep';end if;
+end $$;
+select 'PASS: planning RLS, manager transfer, own-only preparation, stale-write protection, next-session reset, reminder persistence, validation, audit, closed campaign protection, cascading cleanup' as result;
+rollback;
