@@ -1,12 +1,14 @@
 # Arkham · Kampánynapló
 
-Magyar, mobilbarát webapp Supabase Auth és PostgreSQL háttérrel. Supabase-projekt: Arkham Journal (`ddxzgkqjorqlfotfhiok`). Mindkét migráció alkalmazva.
+Magyar, mobilbarát webapp Supabase Auth és PostgreSQL háttérrel. Supabase-projekt: Arkham Journal (`ddxzgkqjorqlfotfhiok`).
 
 ## Funkciók
 
 E-mail/jelszó belépés, regisztráció és jelszó-visszaállítás; kampányok; hét napos, visszavonható meghívólinkek; legfeljebb négy csapattag; 64 normál kampánynyomozó kiválasztása a Hall of Arkham listája alapján; saját adatlap, XP, traumák, állapotok, jegyzetek és paklilink; alkalmanként átadható játékmesteri szerep; közös napló és eredmény; változástörténet; kampánygazda átadása; kampány lezárása és névvel megerősített végleges törlés.
 
 A személyes eredmények az alkalom lezárásáig javíthatók. Csak a különbözet módosítja az XP-t és a traumát, egyetlen adatbázis-tranzakcióban. Régi verzióval nem írható felül új mentés. Lezáráskor minden résztvevőnek mentenie kell. Nyomozócsere két alkalom között lehetséges, a korábbi adatlap megmarad. A játékmester saját nyomozó nélkül is vezethet alkalmat. Az alkalom résztvevőlistája indításkor rögzül.
+
+Az alkalom lezárásakor a tényleges játékidő óra és perc formában megadható. Az üres mezők ismeretlen időt jelentenek; a régi alkalmak játékidejét nem számoljuk az adminisztrációs időbélyegekből. Az idő a kampányáttekintőn, az aktuális és a korábbi alkalmaknál látható. Az adott alkalom játékmestere vagy a kampánygazda lezárás után, lezárt kampányban is javíthatja. A javítás naplózott és verzióellenőrzött. A lezárás és az idő mentése egyetlen tranzakció. A `20261010142829_session_duration.sql` migráció alkalmazva.
 
 ## Indítás
 
@@ -36,7 +38,7 @@ Az adatbázis az egyetlen hiteles adattároló. A böngésző a Supabase-belép�
 
 Minden tábla RLS-védett. Közvetlen kliensoldali adatbázisírás tiltott. Az arkham_action függvény ellenőrzi a belépést, kampánytagságot, az aktuális szerepet és a rekordverziót. Kampánysor-zárolás sorba rendezi a párhuzamos módosításokat. A naplót csak a szerver írhatja.
 
-A Supabase ellenőrzője három szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. A kampánytörlési függvény ezen felül kampánygazdai jogosultságot és pontos névmegerősítést is követel. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+A Supabase ellenőrzője négy szándékosan hitelesített felhasználók számára elérhető SECURITY DEFINER függvényt jelez. Ezek ellenőrzött belépési pontok, rögzített üres search_path értékkel; anon/PUBLIC végrehajtás tiltott. A kampánytörlési függvény ezen felül kampánygazdai jogosultságot és pontos névmegerősítést is követel. Leírás: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
 
 ## Ellenőrzés
 

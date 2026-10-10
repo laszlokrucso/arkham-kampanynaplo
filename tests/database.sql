@@ -32,6 +32,13 @@ begin
  failed:=false;begin update public.arkham_campaigns set owner_id=t.b where id=t.cid;exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: direct writes allowed';end if;
  perform set_config('request.jwt.claim.sub',t.a::text,true);
  d:=public.arkham_action('start_session',t.cid,jsonb_build_object('title','Test scenario','gm_id',t.a));t.sid:=(d->>'id')::uuid;update arkham_test_context set sid=t.sid;
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,1,150,true);exception when raise_exception then failed:=true;end;
+ if not failed or (select duration_minutes is not null or revision<>1 from public.arkham_sessions where id=t.sid) then raise exception 'FAIL: failed closure persisted duration';end if;
+ perform set_config('request.jwt.claim.sub',t.b::text,true);
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,1,150);exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: ordinary member can edit duration';end if;
+ perform set_config('request.jwt.claim.sub',t.stranger::text,true);
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,1,150);exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: outsider can edit duration';end if;
+ perform set_config('request.jwt.claim.sub',t.a::text,true);
  failed:=false;begin perform public.arkham_action('close_session',t.cid,jsonb_build_object('session_id',t.sid));exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: incomplete session closed';end if;
  perform public.arkham_action('save_result',t.cid,jsonb_build_object('session_id',t.sid,'revision',1,'xp',5,'physical',1,'mental',0));
  failed:=false;begin perform public.arkham_action('save_result',t.cid,jsonb_build_object('session_id',t.sid,'revision',1,'xp',5,'physical',1,'mental',0));exception when serialization_failure then failed:=true;end;if not failed then raise exception 'FAIL: duplicate result accepted';end if;
@@ -42,7 +49,15 @@ begin
  perform set_config('request.jwt.claim.sub',t.b::text,true);
  perform public.arkham_action('save_common',t.cid,jsonb_build_object('session_id',t.sid,'revision',2,'resolution','R1','note','Integration note'));
  perform public.arkham_action('save_result',t.cid,jsonb_build_object('session_id',t.sid,'revision',1,'xp',4,'physical',0,'mental',0));
- perform public.arkham_action('close_session',t.cid,jsonb_build_object('session_id',t.sid));
+ perform public.arkham_save_duration(t.cid,t.sid,3,155,true);
+ if (select duration_minutes from public.arkham_sessions where id=t.sid)<>155 then raise exception 'FAIL: closure duration missing';end if;
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,3,160);exception when serialization_failure then failed:=true;end;if not failed then raise exception 'FAIL: stale duration overwrote latest';end if;
+ select revision into rev from public.arkham_sessions where id=t.sid;
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,rev,-1);exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: negative duration accepted';end if;
+ failed:=false;begin perform public.arkham_save_duration(t.cid,t.sid,rev,60000);exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: excessive duration accepted';end if;
+ perform public.arkham_save_duration(t.cid,t.sid,rev,165);
+ if (select duration_minutes from public.arkham_sessions where id=t.sid)<>165 then raise exception 'FAIL: closed session duration cannot be corrected';end if;
+ if not exists(select 1 from public.arkham_events where campaign_id=t.cid and action='save_duration' and detail->>'duration_minutes'='165') then raise exception 'FAIL: duration audit missing';end if;
  if not exists(select 1 from public.arkham_sessions where id=t.sid and closed) then raise exception 'FAIL: session not closed';end if;
  failed:=false;begin perform public.arkham_action('save_result',t.cid,jsonb_build_object('session_id',t.sid,'revision',2,'xp',9,'physical',0,'mental',0));exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: closed result editable';end if;
  perform set_config('request.jwt.claim.sub',t.a::text,true);
@@ -53,6 +68,10 @@ begin
  failed:=false;begin perform public.arkham_delete_campaign(t.cid,'Automated integration check');exception when insufficient_privilege then failed:=true;end;if not failed then raise exception 'FAIL: previous owner can delete campaign';end if;
  perform set_config('request.jwt.claim.sub',t.b::text,true);
  failed:=false;begin perform public.arkham_delete_campaign(t.cid,'wrong name');exception when raise_exception then failed:=true;end;if not failed then raise exception 'FAIL: campaign deletion accepted wrong confirmation';end if;
+ perform public.arkham_action('close_campaign',t.cid,'{}');
+ select revision into rev from public.arkham_sessions where id=t.sid;
+ perform public.arkham_save_duration(t.cid,t.sid,rev,null);
+ if (select duration_minutes is not null from public.arkham_sessions where id=t.sid) then raise exception 'FAIL: duration cannot be cleared on closed campaign';end if;
  perform public.arkham_delete_campaign(t.cid,'Automated integration check');
  if exists(select 1 from public.arkham_campaigns where id=t.cid)
   or exists(select 1 from public.arkham_members where campaign_id=t.cid)
@@ -64,5 +83,5 @@ begin
   or exists(select 1 from public.arkham_invites where campaign_id=t.cid)
  then raise exception 'FAIL: campaign deletion left dependent data';end if;
 end $$;
-select 'PASS: RLS isolation, invite-only join, own-only writes, character uniqueness, transactional XP delta, stale-write protection, GM transfer, session completeness, closed-session protection, archival, owner transfer, checked campaign deletion' as result;
+select 'PASS: duration permissions, atomic closure, correction, audit and stale-write checks; RLS isolation, invite-only join, own-only writes, character uniqueness, transactional XP delta, GM transfer, session completeness, closed-session protection, archival, owner transfer, checked campaign deletion' as result;
 rollback;
